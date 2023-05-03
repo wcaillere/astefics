@@ -1,7 +1,4 @@
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -90,7 +87,7 @@ public class DalMySQL implements IDal {
     }
 
     @Override
-    public HashMap<String, Object> getOne(String tableName, int id) {
+    public HashMap<String, Object> getOne(String tableName, String id) {
 
         Statement stmt = null;
 
@@ -114,9 +111,10 @@ public class DalMySQL implements IDal {
 
         HashMap<String, Object> item = new HashMap<>();
         try {
-            rs.next();
-            for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                item.put(rs.getMetaData().getColumnName(i), rs.getObject(i));
+            if (rs.next()) {
+                for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                    item.put(rs.getMetaData().getColumnName(i), rs.getObject(i));
+                }
             }
         } catch (SQLException e) {
             System.out.println("Echec lors du parcours du ResultSet");
@@ -133,12 +131,33 @@ public class DalMySQL implements IDal {
     }
 
     @Override
-    public void modifyOne(String tableName, int id, TreeMap<String, ?> modifications) {
+    public void modifyOne(String tableName, String id, TreeMap<String, ?> modifications) {
 
     }
 
     @Override
-    public void suppressOne(String tableName, int id) {
+    public void suppressOne(String tableName, String id) {
+        String rqt = "DELETE FROM " + tableName + " WHERE id=" + id;
+        Statement stmt = null;
 
+        try {
+            stmt = this.cnx.createStatement();
+
+            ResultSet rs = stmt.executeQuery("SELECT id FROM " + tableName + " WHERE id=" + id);
+
+            if (rs.next()) {
+                stmt = this.cnx.createStatement();
+                stmt.executeUpdate(rqt);
+
+                System.out.println("Suppression réussie !");
+            } else {
+                System.out.println("Suppression annulée : aucun élément ne possède l'id donné");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Échec de la suppression");
+            System.out.println(e.getMessage());
+            System.exit(35);
+        }
     }
 }
